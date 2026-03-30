@@ -12,10 +12,9 @@ metadata:
   name: meta-fuse-csi-plugin.csi.storage.pfn.io
 spec:
   attachRequired: false
-  fsGroupPolicy: ReadWriteOnceWithFSType
+  fsGroupPolicy: File
   podInfoOnMount: true
   requiresRepublish: true
   storageCapacity: false
   volumeLifecycleModes:
   - Ephemeral
-

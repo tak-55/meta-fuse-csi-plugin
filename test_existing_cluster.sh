@@ -320,6 +320,24 @@ spec:
     volumeMounts:
     - name: fake-dev-fuse
       mountPath: /fake-dev
+  - name: prepare-s3fs-passwd
+    image: busybox
+    command: ["/bin/sh", "-c"]
+    args:
+    - |
+      umask 077
+      printf '%s:%s\n' "$AWS_ACCESS_KEY_ID" "$AWS_SECRET_ACCESS_KEY" > /s3fs-passwd/passwd-s3fs
+    envFrom:
+    - secretRef:
+        name: mfcp-cluster-test-s3
+    securityContext:
+      allowPrivilegeEscalation: false
+      capabilities:
+        drop: ["ALL"]
+      privileged: false
+    volumeMounts:
+    - name: s3fs-passwd
+      mountPath: /s3fs-passwd
   - name: starter
     restartPolicy: Always
     image: ${PROXY_S3FS_IMAGE}
@@ -327,7 +345,7 @@ spec:
     command: ["/bin/bash", "-lc"]
     args:
     - |
-      exec s3fs "${S3_BUCKET}" /tmp -f -o url="${S3_ENDPOINT}" ${S3FS_ARGS:-}
+      exec s3fs "${S3_BUCKET}" /tmp -f -o passwd_file=/s3fs-passwd/passwd-s3fs -o url="${S3_ENDPOINT}" ${S3FS_ARGS:-}
     env:
     - name: FUSERMOUNT3PROXY_FDPASSING_SOCKPATH
       value: /fusermount3-proxy/fuse-csi-ephemeral.sock
@@ -345,6 +363,9 @@ spec:
     - name: fake-dev-fuse
       mountPath: /dev/fuse
       subPath: fuse
+    - name: s3fs-passwd
+      mountPath: /s3fs-passwd
+      readOnly: true
     - name: fuse-csi-ephemeral
       mountPath: /data
       readOnly: true
@@ -372,6 +393,8 @@ spec:
   - name: fuse-fd-passing
     emptyDir: {}
   - name: fake-dev-fuse
+    emptyDir: {}
+  - name: s3fs-passwd
     emptyDir: {}
   - name: fuse-csi-ephemeral
     csi:

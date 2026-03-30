@@ -1,5 +1,9 @@
 name: "Publish Container Image"
 
+concurrency:
+  group: publish-image-${{ github.ref }}
+  cancel-in-progress: true
+
 on:
   push:
     branches:
@@ -15,6 +19,18 @@ permissions:
 jobs:
   publish-image:
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - target: push-driver
+            cache_scope: meta-fuse-csi-plugin
+          - target: push-example-proxy-s3fs
+            cache_scope: mfcp-example-proxy-s3fs
+          - target: push-example-proxy-sshfs
+            cache_scope: mfcp-example-proxy-sshfs
+          - target: push-example-starter-sshfs
+            cache_scope: mfcp-example-starter-sshfs
     steps:
       - uses: actions/checkout@v4
       - uses: docker/setup-buildx-action@v3
@@ -43,5 +59,7 @@ jobs:
         # buildkit requires $ACTIONS_CACHE_URL and $ACTIONS_RUNTIME_TOKEN for GHA build cache
       - name: publish image
         run: |
-          make push-driver STAGINGVERSION=${{ steps.meta.outputs.stagingversion }} PUSH_LATEST=${{ steps.meta.outputs.push_latest }}
-          make push-published-examples STAGINGVERSION=${{ steps.meta.outputs.stagingversion }} PUSH_LATEST=${{ steps.meta.outputs.push_latest }}
+          make ${{ matrix.target }} \
+            STAGINGVERSION=${{ steps.meta.outputs.stagingversion }} \
+            PUSH_LATEST=${{ steps.meta.outputs.push_latest }} \
+            DOCKER_CACHE_ARGS="--cache-from type=gha,scope=${{ matrix.cache_scope }} --cache-to type=gha,mode=max,scope=${{ matrix.cache_scope }}"

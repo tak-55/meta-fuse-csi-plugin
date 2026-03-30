@@ -71,8 +71,9 @@ build-driver:
 
 .PHONY: init-buildx-driver
 init-buildx-driver:
-	- docker buildx rm mfcp-builder
-	docker buildx create --name ${BUILDX_BUILDER}
+	@if ! docker buildx inspect ${BUILDX_BUILDER} >/dev/null 2>&1; then \
+		docker buildx create --name ${BUILDX_BUILDER} --use; \
+	fi
 
 .PHONY: push-driver
 push-driver: init-buildx-driver
@@ -105,7 +106,7 @@ build-example-$(1)-$(2):
 	fi
 
 .PHONY: push-example-$1-$2
-push-example-$(1)-$(2):
+push-example-$(1)-$(2): init-buildx-driver
 	docker buildx build ${DOCKER_BUILD_ARGS} ${DOCKER_CACHE_ARGS} \
 		--file ./examples/$1/$2/Dockerfile \
 		--tag ${EXAMPLE_IMAGE}-$1-$2:${STAGINGVERSION} \

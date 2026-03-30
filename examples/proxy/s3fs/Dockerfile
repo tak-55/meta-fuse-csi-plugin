@@ -7,8 +7,14 @@ RUN make fusermount3-proxy BINDIR=/bin
 FROM ubuntu:22.04
 ARG TARGETARCH
 
-RUN apt update && apt upgrade -y
-RUN apt install -y ca-certificates wget libfuse2 fuse3
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends \
+        ca-certificates \
+        fuse3 \
+        libfuse2 \
+        s3fs \
+        wget && \
+    rm -rf /var/lib/apt/lists/*
 RUN useradd --create-home --shell /bin/bash --uid 1000 app
 
 # prepare for MinIO
@@ -31,9 +37,6 @@ EOF
 RUN ln -sf /home/app/test.txt /test.txt && \
     chmod +x /home/app/configure_minio.sh && \
     chown -R app:app /home/app
-
-
-RUN apt-get install -y s3fs
 
 COPY --from=fusermount3-proxy-builder /bin/fusermount3-proxy /bin/fusermount3
 RUN ln -sf /bin/fusermount3 /bin/fusermount

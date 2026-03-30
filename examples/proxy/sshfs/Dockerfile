@@ -7,13 +7,15 @@ RUN make fusermount3-proxy BINDIR=/bin
 FROM ubuntu:22.04
 ARG TARGETARCH
 
-RUN apt update && apt upgrade -y
-RUN apt install -y ca-certificates wget libfuse2 fuse3
-
-# install sshfs
-RUN apt install -y sshfs
-
-RUN apt install -y openssh-server
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends \
+        ca-certificates \
+        fuse3 \
+        libfuse2 \
+        openssh-server \
+        sshfs \
+        wget && \
+    rm -rf /var/lib/apt/lists/*
 RUN useradd --create-home --shell /bin/bash --uid 1000 app
 
 WORKDIR /home/app

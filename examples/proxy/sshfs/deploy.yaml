@@ -29,7 +29,7 @@ spec:
   - name: starter
     restartPolicy: Always
     image: ghcr.io/tak-55/meta-fuse-csi-plugin/mfcp-example-proxy-sshfs:latest
-    imagePullPolicy: IfNotPresent
+    imagePullPolicy: Always
     env:
     - name: FUSERMOUNT3PROXY_FDPASSING_SOCKPATH
       value: "/fusermount3-proxy/fuse-csi-ephemeral.sock"

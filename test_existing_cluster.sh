@@ -118,12 +118,18 @@ DRIVER_IMAGE="${REGISTRY}/meta-fuse-csi-plugin:${IMAGE_TAG}"
 PROXY_S3FS_IMAGE="${REGISTRY}/mfcp-example-proxy-s3fs:${IMAGE_TAG}"
 PROXY_SSHFS_IMAGE="${REGISTRY}/mfcp-example-proxy-sshfs:${IMAGE_TAG}"
 STARTER_SSHFS_IMAGE="${REGISTRY}/mfcp-example-starter-sshfs:${IMAGE_TAG}"
+if [[ "${IMAGE_TAG}" == "latest" ]]; then
+    IMAGE_PULL_POLICY="Always"
+else
+    IMAGE_PULL_POLICY="IfNotPresent"
+fi
 
 echo "Using images:"
 echo "  driver:        ${DRIVER_IMAGE}"
 echo "  proxy/s3fs:    ${PROXY_S3FS_IMAGE}"
 echo "  proxy/sshfs:   ${PROXY_SSHFS_IMAGE}"
 echo "  starter/sshfs: ${STARTER_SSHFS_IMAGE}"
+echo "  pull policy:   ${IMAGE_PULL_POLICY}"
 
 if [[ -n "${CONFIG_DIR}" ]]; then
     echo "Using external config from: ${CONFIG_DIR}"
@@ -205,6 +211,7 @@ deploy_driver() {
     kubectl apply -f "${SCRIPT_DIR}/deploy/csi-driver.yaml"
     sed \
         -e "s#ghcr.io/tak-55/meta-fuse-csi-plugin/meta-fuse-csi-plugin:latest#${DRIVER_IMAGE}#" \
+        -e "s#imagePullPolicy: Always#imagePullPolicy: ${IMAGE_PULL_POLICY}#" \
         "${SCRIPT_DIR}/deploy/csi-driver-daemonset.yaml" | kubectl apply -f -
     if ! kubectl rollout status ds/meta-fuse-csi-plugin -n mfcp-system --timeout="${ROLLOUT_TIMEOUT}"; then
         echo "CSI driver rollout failed; collecting pod diagnostics..." >&2
@@ -222,16 +229,19 @@ prepare_self_contained_manifests() {
 
     sed \
         -e "s#ghcr.io/tak-55/meta-fuse-csi-plugin/mfcp-example-proxy-s3fs:latest#${PROXY_S3FS_IMAGE}#" \
+        -e "s#imagePullPolicy: Always#imagePullPolicy: ${IMAGE_PULL_POLICY}#" \
         "${SCRIPT_DIR}/examples/proxy/s3fs/deploy.yaml" \
         > "${TMP_DIR}/examples/proxy/s3fs/deploy.yaml"
 
     sed \
         -e "s#ghcr.io/tak-55/meta-fuse-csi-plugin/mfcp-example-proxy-sshfs:latest#${PROXY_SSHFS_IMAGE}#" \
+        -e "s#imagePullPolicy: Always#imagePullPolicy: ${IMAGE_PULL_POLICY}#" \
         "${SCRIPT_DIR}/examples/proxy/sshfs/deploy.yaml" \
         > "${TMP_DIR}/examples/proxy/sshfs/deploy.yaml"
 
     sed \
         -e "s#ghcr.io/tak-55/meta-fuse-csi-plugin/mfcp-example-starter-sshfs:latest#${STARTER_SSHFS_IMAGE}#" \
+        -e "s#imagePullPolicy: Always#imagePullPolicy: ${IMAGE_PULL_POLICY}#" \
         "${SCRIPT_DIR}/examples/starter/sshfs/deploy.yaml" \
         > "${TMP_DIR}/examples/starter/sshfs/deploy.yaml"
 }
@@ -341,7 +351,7 @@ spec:
   - name: starter
     restartPolicy: Always
     image: ${PROXY_S3FS_IMAGE}
-    imagePullPolicy: IfNotPresent
+    imagePullPolicy: ${IMAGE_PULL_POLICY}
     command: ["/bin/bash", "-lc"]
     args:
     - |
@@ -474,7 +484,7 @@ spec:
   - name: starter
     restartPolicy: Always
     image: ${PROXY_SSHFS_IMAGE}
-    imagePullPolicy: IfNotPresent
+    imagePullPolicy: ${IMAGE_PULL_POLICY}
     command: ["/bin/bash", "-lc"]
     args:
     - |
@@ -561,7 +571,7 @@ spec:
   - name: starter
     restartPolicy: Always
     image: ${STARTER_SSHFS_IMAGE}
-    imagePullPolicy: IfNotPresent
+    imagePullPolicy: ${IMAGE_PULL_POLICY}
     command: ["/bin/bash", "-lc"]
     args:
     - |

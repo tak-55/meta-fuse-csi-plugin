@@ -17,7 +17,7 @@ spec:
   - name: starter
     restartPolicy: Always
     image: ghcr.io/tak-55/meta-fuse-csi-plugin/mfcp-example-starter-sshfs:latest
-    imagePullPolicy: IfNotPresent
+    imagePullPolicy: Always
     securityContext:
       allowPrivilegeEscalation: false
       capabilities:

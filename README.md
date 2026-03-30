@@ -82,6 +82,7 @@ $ kubectl delete pod/hostusers-smoke
 
 ### 2. CSI driver を deploy する
 既定の manifest は GHCR の `latest` を参照します。
+`latest` を使う場合は新しい image を確実に取り込むため `imagePullPolicy: Always` を使います。
 
 ```console
 $ kubectl apply -f ./deploy/csi-driver.yaml

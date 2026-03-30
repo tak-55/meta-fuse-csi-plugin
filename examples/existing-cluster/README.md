@@ -19,4 +19,6 @@ cluster-test-config/
 $ cp ./examples/existing-cluster/s3.env.example ./cluster-test-config/s3.env
 $ cp ./examples/existing-cluster/sshfs.env.example ./cluster-test-config/sshfs.env
 $ ./test_existing_cluster.sh --config-dir ./cluster-test-config
+$ ./render_external_s3fs_manifest.sh --config-dir ./cluster-test-config > /tmp/external-s3fs.yaml
+$ kubectl apply -f /tmp/external-s3fs.yaml
 ```

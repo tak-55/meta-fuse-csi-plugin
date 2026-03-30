@@ -106,6 +106,8 @@ $ cp ./examples/existing-cluster/sshfs.env.example ./cluster-test-config/sshfs.e
 $ cp /path/to/your/id_ed25519 ./cluster-test-config/sshfs/id_ed25519
 $ cp /path/to/your/known_hosts ./cluster-test-config/sshfs/known_hosts # 任意ですが推奨
 $ ./test_existing_cluster.sh --config-dir ./cluster-test-config
+$ ./render_external_s3fs_manifest.sh --config-dir ./cluster-test-config > /tmp/external-s3fs.yaml
+$ kubectl apply -f /tmp/external-s3fs.yaml
 ```
 
 `proxy/s3fs` の external test では、`s3.env` の `AWS_ACCESS_KEY_ID` / `AWS_SECRET_ACCESS_KEY` から一時的な `passwd_file` を生成し、その認証情報を `s3fs` に明示的に渡します。

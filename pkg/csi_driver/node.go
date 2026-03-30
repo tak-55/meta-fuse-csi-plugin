@@ -19,8 +19,10 @@ limitations under the License.
 package driver
 
 import (
+	"fmt"
 	"os"
 	"path/filepath"
+	"strconv"
 	"strings"
 	"time"
 
@@ -91,6 +93,14 @@ func (s *nodeServer) NodePublishVolume(ctx context.Context, req *csi.NodePublish
 	}
 	if mountOptions, ok := vc[VolumeContextKeyMountOptions]; ok {
 		fuseMountOptions = joinMountOptions(fuseMountOptions, strings.Split(mountOptions, ","))
+	}
+	if capMount := req.GetVolumeCapability().GetMount(); capMount != nil {
+		if mountGroup := capMount.GetVolumeMountGroup(); mountGroup != "" {
+			if _, err := strconv.Atoi(mountGroup); err != nil {
+				return nil, status.Errorf(codes.InvalidArgument, "invalid volume mount group %q: %v", mountGroup, err)
+			}
+			fuseMountOptions = joinMountOptions(fuseMountOptions, []string{fmt.Sprintf("volume-mount-group=%s", mountGroup)})
+		}
 	}
 
 	if vc[VolumeContextKeyEphemeral] != "true" {

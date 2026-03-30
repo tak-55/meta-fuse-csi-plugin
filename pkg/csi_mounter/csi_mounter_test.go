@@ -71,6 +71,20 @@ func TestPrepareMountArgs(t *testing.T) {
 			expecteCsiMountOptions:     append(defaultCsiMountOptions, "ro", "noexec", "noatime"),
 			expecteSidecarMountOptions: []string{"implicit-dirs", "max-conns-per-host=10"},
 		},
+		{
+			name:              "should apply volume mount group to fuse ownership",
+			inputMountOptions: []string{"volume-mount-group=1000"},
+			expecteCsiMountOptions: []string{
+				"nodev",
+				"nosuid",
+				"allow_other",
+				"default_permissions",
+				"rootmode=40770",
+				"user_id=1000",
+				"group_id=1000",
+			},
+			expecteSidecarMountOptions: []string{},
+		},
 	}
 
 	for _, tc := range testCases {

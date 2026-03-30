@@ -71,7 +71,9 @@ func NewDriver(config *DriverConfig) (*Driver, error) {
 	driver.addVolumeCapabilityAccessModes(vcam)
 
 	driver.ids = newIdentityServer(driver)
-	nscap := []csi.NodeServiceCapability_RPC_Type{}
+	nscap := []csi.NodeServiceCapability_RPC_Type{
+		csi.NodeServiceCapability_RPC_VOLUME_MOUNT_GROUP,
+	}
 	driver.ns = newNodeServer(driver, config.Mounter)
 	driver.addNodeServiceCapabilities(nscap)
 

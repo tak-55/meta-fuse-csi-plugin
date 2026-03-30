@@ -24,6 +24,7 @@ import (
 	"net"
 	"os"
 	"path/filepath"
+	"strconv"
 	"strings"
 	"sync"
 	"syscall"
@@ -213,20 +214,35 @@ func prepareMountOptions(options []string) ([]string, []string) {
 		"dirsync": true,
 	}
 
+	mountUserID := os.Getuid()
+	mountGroupID := os.Getgid()
+	rootMode := "40000"
 	csiMountOptions := []string{
 		"nodev",
 		"nosuid",
 		"allow_other",
 		"default_permissions",
-		"rootmode=40000",
-		fmt.Sprintf("user_id=%d", os.Getuid()),
-		fmt.Sprintf("group_id=%d", os.Getgid()),
 	}
 
 	// users may pass options that should be used by Linux mount(8),
 	// filter out these options and not pass to the sidecar mounter.
 	validMountOptions := []string{"rw", "ro"}
 	optionSet := sets.NewString(options...)
+	for _, o := range optionSet.List() {
+		if strings.HasPrefix(o, "volume-mount-group=") {
+			v := strings.TrimPrefix(o, "volume-mount-group=")
+			gid, err := strconv.Atoi(v)
+			if err != nil {
+				klog.Warningf("got invalid volume mount group %q. Will ignore it and continue to mount.", v)
+			} else {
+				mountUserID = gid
+				mountGroupID = gid
+				rootMode = "40770"
+			}
+			optionSet.Delete(o)
+		}
+	}
+
 	for _, o := range validMountOptions {
 		if optionSet.Has(o) {
 			csiMountOptions = append(csiMountOptions, o)
@@ -245,6 +261,13 @@ func prepareMountOptions(options []string) ([]string, []string) {
 			optionSet.Delete(o)
 		}
 	}
+
+	csiMountOptions = append(
+		csiMountOptions,
+		fmt.Sprintf("rootmode=%s", rootMode),
+		fmt.Sprintf("user_id=%d", mountUserID),
+		fmt.Sprintf("group_id=%d", mountGroupID),
+	)
 
 	return csiMountOptions, optionSet.List()
 }

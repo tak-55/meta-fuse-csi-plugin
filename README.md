@@ -132,6 +132,7 @@ $ ./examples/check.sh ./starter/sshfs mfcp-example-starter-sshfs starter /home/a
 
 ### 6. Troubleshooting
 - CSI node plugin の状態確認: `kubectl logs -n mfcp-system ds/meta-fuse-csi-plugin -c meta-fuse-csi-plugin`
+- `Error: container has runAsNonRoot and image will run as root` が出る場合は、最新版の `deploy/csi-driver-daemonset.yaml` を再適用してください。node 側 DaemonSet は root 前提のため、manifest で `runAsNonRoot: false` / `runAsUser: 0` を明示しています。
 - example sidecar の log: `kubectl logs POD_NAME -c starter`
 - Pod 起動時の詳細: `kubectl describe pod POD_NAME`
 - cleanup: `kubectl delete -f ./examples/proxy/s3fs/deploy.yaml`, `kubectl delete -f ./examples/proxy/sshfs/deploy.yaml`, `kubectl delete -f ./examples/starter/sshfs/deploy.yaml`

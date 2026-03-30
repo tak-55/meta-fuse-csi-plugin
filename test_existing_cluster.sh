@@ -206,7 +206,12 @@ deploy_driver() {
     sed \
         -e "s#ghcr.io/tak-55/meta-fuse-csi-plugin/meta-fuse-csi-plugin:latest#${DRIVER_IMAGE}#" \
         "${SCRIPT_DIR}/deploy/csi-driver-daemonset.yaml" | kubectl apply -f -
-    kubectl rollout status ds/meta-fuse-csi-plugin -n mfcp-system --timeout="${ROLLOUT_TIMEOUT}"
+    if ! kubectl rollout status ds/meta-fuse-csi-plugin -n mfcp-system --timeout="${ROLLOUT_TIMEOUT}"; then
+        echo "CSI driver rollout failed; collecting pod diagnostics..." >&2
+        kubectl get pods -n mfcp-system -o wide >&2 || true
+        kubectl describe pods -n mfcp-system >&2 || true
+        return 1
+    fi
 }
 
 prepare_self_contained_manifests() {

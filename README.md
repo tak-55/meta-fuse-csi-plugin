@@ -28,6 +28,7 @@ You can try this plugin with local kind cluster
 
 ## 公開コンテナイメージ
 コンテナイメージは GitHub Container Registry の `ghcr.io/tak-55/meta-fuse-csi-plugin` に公開されます。
+publish workflow では今回使う image のみを作成します。
 
 - CSI driver: `ghcr.io/tak-55/meta-fuse-csi-plugin/meta-fuse-csi-plugin`
 - proxy s3fs example: `ghcr.io/tak-55/meta-fuse-csi-plugin/mfcp-example-proxy-s3fs`

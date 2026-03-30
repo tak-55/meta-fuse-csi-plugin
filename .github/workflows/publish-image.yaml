@@ -44,4 +44,4 @@ jobs:
       - name: publish image
         run: |
           make push-driver STAGINGVERSION=${{ steps.meta.outputs.stagingversion }} PUSH_LATEST=${{ steps.meta.outputs.push_latest }}
-          make push-examples STAGINGVERSION=${{ steps.meta.outputs.stagingversion }} PUSH_LATEST=${{ steps.meta.outputs.push_latest }}
+          make push-published-examples STAGINGVERSION=${{ steps.meta.outputs.stagingversion }} PUSH_LATEST=${{ steps.meta.outputs.push_latest }}

@@ -131,6 +131,18 @@ build-examples: $(BUILD_EXAMPLES)
 .PHONY: push-examples
 push-examples: $(PUSH_EXAMPLES)
 
+.PHONY: build-published-examples
+build-published-examples: \
+	build-example-proxy-s3fs \
+	build-example-proxy-sshfs \
+	build-example-starter-sshfs
+
+.PHONY: push-published-examples
+push-published-examples: \
+	push-example-proxy-s3fs \
+	push-example-proxy-sshfs \
+	push-example-starter-sshfs
+
 define test-example-template
 ifneq ("$(EXAMPLE_TESTS)", "")
 EXAMPLE_TESTS += test-example-$(1)-$(2)-$(6)

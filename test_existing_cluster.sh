@@ -281,6 +281,7 @@ run_self_contained_starter_sshfs() {
 
 prepare_external_s3() {
     local -a s3_secret_args
+    local s3_region_arg=""
 
     load_env_file "${CONFIG_DIR}/s3.env"
 
@@ -297,6 +298,9 @@ prepare_external_s3() {
     )
     if [[ -n "${AWS_SESSION_TOKEN:-}" ]]; then
         s3_secret_args+=(--from-literal=AWS_SESSION_TOKEN="${AWS_SESSION_TOKEN}")
+    fi
+    if [[ -n "${S3_REGION:-}" ]]; then
+        s3_region_arg="-o endpoint=${S3_REGION}"
     fi
 
     kubectl create secret generic mfcp-cluster-test-s3 \
@@ -355,7 +359,7 @@ spec:
     command: ["/bin/bash", "-lc"]
     args:
     - |
-      exec s3fs "${S3_BUCKET}" /tmp -f -o passwd_file=/s3fs-passwd/passwd-s3fs -o url="${S3_ENDPOINT}" ${S3FS_ARGS:-}
+      exec s3fs "${S3_BUCKET}" /tmp -f -o passwd_file=/s3fs-passwd/passwd-s3fs -o url="${S3_ENDPOINT}" ${s3_region_arg} ${S3FS_ARGS:-}
     env:
     - name: FUSERMOUNT3PROXY_FDPASSING_SOCKPATH
       value: /fusermount3-proxy/fuse-csi-ephemeral.sock

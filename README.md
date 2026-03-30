@@ -111,6 +111,7 @@ $ kubectl apply -f /tmp/external-s3fs.yaml
 ```
 
 `proxy/s3fs` の external test では、`s3.env` の `AWS_ACCESS_KEY_ID` / `AWS_SECRET_ACCESS_KEY` から一時的な `passwd_file` を生成し、その認証情報を `s3fs` に明示的に渡します。
+region が必要な S3 互換 endpoint を使う場合は、`s3.env` に `S3_REGION=...` を設定してください。
 
 ### 3. `proxy/s3fs` を検証する
 この example は Pod 内で MinIO を起動し、`starter` container 側の内容と `busybox` container から見える mount 結果が一致することを確認します。

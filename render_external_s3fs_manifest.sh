@@ -140,6 +140,9 @@ configmap_args=(
     --from-literal=S3_BUCKET="${S3_BUCKET}"
     --from-literal=S3_ENDPOINT="${S3_ENDPOINT}"
 )
+if [[ -n "${S3_REGION:-}" ]]; then
+    configmap_args+=(--from-literal=S3_REGION="${S3_REGION}")
+fi
 if [[ -n "${S3FS_ARGS:-}" ]]; then
     configmap_args+=(--from-literal=S3FS_ARGS="${S3FS_ARGS}")
 fi
@@ -212,7 +215,11 @@ spec:
     command: ["/bin/bash", "-lc"]
     args:
     - |
-      exec s3fs "\$S3_BUCKET" /tmp -f -o passwd_file=/s3fs-passwd/passwd-s3fs -o url="\$S3_ENDPOINT" \${S3FS_ARGS:-}
+      region_arg=""
+      if [[ -n "\${S3_REGION:-}" ]]; then
+        region_arg="-o endpoint=\${S3_REGION}"
+      fi
+      exec s3fs "\$S3_BUCKET" /tmp -f -o passwd_file=/s3fs-passwd/passwd-s3fs -o url="\$S3_ENDPOINT" \${region_arg} \${S3FS_ARGS:-}
     env:
     - name: FUSERMOUNT3PROXY_FDPASSING_SOCKPATH
       value: /fusermount3-proxy/fuse-csi-ephemeral.sock

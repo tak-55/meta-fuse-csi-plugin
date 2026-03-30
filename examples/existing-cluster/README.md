@@ -1,6 +1,6 @@
 # 既存クラスタ向け設定 example
 
-運用中の S3 / SFTP に対して検証したい場合は、この example ファイルをテンプレートとして使い、実際の設定は git 管理外のローカルファイルに置いてください。`s3fs` の external test では、`s3.env` の access key / secret key から一時的な `passwd_file` を生成して、その認証情報を明示的に使います。
+運用中の S3 / SFTP に対して検証したい場合は、この example ファイルをテンプレートとして使い、実際の設定は git 管理外のローカルファイルに置いてください。`s3fs` の external test では、`s3.env` の access key / secret key から一時的な `passwd_file` を生成して、その認証情報を明示的に使います。region 指定が必要な場合は `S3_REGION` も設定してください。
 
 推奨レイアウト:
 

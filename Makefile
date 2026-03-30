@@ -23,7 +23,7 @@ DRIVER_BINARY = meta-fuse-csi-plugin
 STARTER_BINARY = fuse-starter
 FUSERMOUNT3PROXY_BINARY = fusermount3-proxy
 
-REGISTRY ?= ghcr.io/pfnet-research/meta-fuse-csi-plugin
+REGISTRY ?= ghcr.io/tak-55/meta-fuse-csi-plugin
 DRIVER_IMAGE = ${REGISTRY}/${DRIVER_BINARY}
 STARTER_IMAGE = ${REGISTRY}/${STARTER_BINARY}
 EXAMPLE_IMAGE = ${REGISTRY}/mfcp-example
@@ -37,6 +37,7 @@ BUILDX_BUILDER = mfcp-builder
 
 LOAD_TO_KIND ?= false
 PUBLISH_IMAGE ?= false
+PUSH_LATEST ?= true
 
 $(info STAGINGVERSION is ${STAGINGVERSION})
 $(info DRIVER_IMAGE is ${DRIVER_IMAGE})
@@ -78,7 +79,7 @@ push-driver: init-buildx-driver
 	docker buildx build ${DOCKER_BUILD_ARGS} ${DOCKER_CACHE_ARGS} \
 		--file ./cmd/csi_driver/Dockerfile \
 		--tag ${DRIVER_IMAGE}:${STAGINGVERSION} \
-		--tag ${DRIVER_IMAGE}:latest \
+		$(if $(filter true,$(PUSH_LATEST)),--tag ${DRIVER_IMAGE}:latest) \
 		--builder ${BUILDX_BUILDER} \
 		--push \
 		--platform linux/amd64,linux/arm64 .
@@ -108,7 +109,7 @@ push-example-$(1)-$(2):
 	docker buildx build ${DOCKER_BUILD_ARGS} ${DOCKER_CACHE_ARGS} \
 		--file ./examples/$1/$2/Dockerfile \
 		--tag ${EXAMPLE_IMAGE}-$1-$2:${STAGINGVERSION} \
-		--tag ${EXAMPLE_IMAGE}-$1-$2:latest \
+		$(if $(filter true,$(PUSH_LATEST)),--tag ${EXAMPLE_IMAGE}-$1-$2:latest) \
 		--builder ${BUILDX_BUILDER} \
 		--push \
 		--platform linux/amd64,linux/arm64 .
@@ -146,17 +147,17 @@ $(eval $(call test-example-template,proxy,mountpoint-s3,starter,/test.txt,busybo
 $(eval $(call test-example-template,proxy,goofys,starter,/test.txt,busybox,/data/subdir/test.txt))
 $(eval $(call test-example-template,proxy,s3fs,starter,/test.txt,busybox,/data/subdir/test.txt))
 $(eval $(call test-example-template,proxy,ros3fs,starter,/test.txt,busybox,/data/subdir/test.txt))
-$(eval $(call test-example-template,proxy,sshfs,starter,/root/sshfs-example/subdir/test.txt,busybox,/data/subdir/test.txt))
+$(eval $(call test-example-template,proxy,sshfs,starter,/home/app/sshfs-example/subdir/test.txt,busybox,/data/subdir/test.txt))
 $(eval $(call test-example-template,starter,ros3fs,starter,/test.txt,busybox,/data/subdir/test.txt))
-$(eval $(call test-example-template,starter,sshfs,starter,/root/sshfs-example/subdir/test.txt,busybox,/data/subdir/test.txt))
+$(eval $(call test-example-template,starter,sshfs,starter,/home/app/sshfs-example/subdir/test.txt,busybox,/data/subdir/test.txt))
 ifndef SKIP_TEST_SUBPATH
 $(eval $(call test-example-template,proxy,mountpoint-s3,starter,/test.txt,busybox,/data-subpath/test.txt))
 $(eval $(call test-example-template,proxy,goofys,starter,/test.txt,busybox,/data-subpath/test.txt))
 $(eval $(call test-example-template,proxy,s3fs,starter,/test.txt,busybox,/data-subpath/test.txt))
 $(eval $(call test-example-template,proxy,ros3fs,starter,/test.txt,busybox,/data-subpath/test.txt))
-$(eval $(call test-example-template,proxy,sshfs,starter,/root/sshfs-example/subdir/test.txt,busybox,/data-subpath/test.txt))
+$(eval $(call test-example-template,proxy,sshfs,starter,/home/app/sshfs-example/subdir/test.txt,busybox,/data-subpath/test.txt))
 $(eval $(call test-example-template,starter,ros3fs,starter,/test.txt,busybox,/data-subpath/test.txt))
-$(eval $(call test-example-template,starter,sshfs,starter,/root/sshfs-example/subdir/test.txt,busybox,/data-subpath/test.txt))
+$(eval $(call test-example-template,starter,sshfs,starter,/home/app/sshfs-example/subdir/test.txt,busybox,/data-subpath/test.txt))
 endif
 
 .PHONY: test-examples

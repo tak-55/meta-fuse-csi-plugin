@@ -7,7 +7,7 @@ spec:
   terminationGracePeriodSeconds: 10
   initContainers:
   - name: starter
-    image: ghcr.io/pfnet-research/meta-fuse-csi-plugin/mfcp-example-proxy-gcsfuse:latest
+    image: ghcr.io/tak-55/meta-fuse-csi-plugin/mfcp-example-proxy-gcsfuse:latest
     imagePullPolicy: IfNotPresent
     command: ["gcsfuse"]
     args: ["--uid=0", "--gid=0", "--temp-dir=/gcsfuse-temp", "--implicit-dirs", "--foreground", "--log-file=/dev/fd/1", "--log-format=text", "mnaoki-csi-dev", "/tmp"]

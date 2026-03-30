@@ -13,7 +13,7 @@ spec:
     args: ["-c", "minio server /data --console-address :9090"]
   - name: starter
     restartPolicy: Always
-    image: ghcr.io/pfnet-research/meta-fuse-csi-plugin/mfcp-example-proxy-ros3fs:latest
+    image: ghcr.io/tak-55/meta-fuse-csi-plugin/mfcp-example-proxy-ros3fs:latest
     imagePullPolicy: IfNotPresent
     command: ["/bin/bash"]
     args: ["-c", "./configure_minio.sh && touch /dev/fuse && /ros3fs /tmp --endpoint=http://localhost:9000 --bucket_name=test-bucket/ --cache_dir=/ro3fs-temp -f"]

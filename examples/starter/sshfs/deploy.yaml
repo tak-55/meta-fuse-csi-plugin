@@ -5,11 +5,25 @@ metadata:
   namespace: default
 spec:
   terminationGracePeriodSeconds: 10
+  hostUsers: false
+  securityContext:
+    runAsNonRoot: true
+    runAsUser: 1000
+    runAsGroup: 1000
+    fsGroup: 1000
+    seccompProfile:
+      type: RuntimeDefault
   initContainers:
   - name: starter
     restartPolicy: Always
-    image: ghcr.io/pfnet-research/meta-fuse-csi-plugin/mfcp-example-starter-sshfs:latest
+    image: ghcr.io/tak-55/meta-fuse-csi-plugin/mfcp-example-starter-sshfs:latest
     imagePullPolicy: IfNotPresent
+    securityContext:
+      allowPrivilegeEscalation: false
+      capabilities:
+        drop:
+        - ALL
+      privileged: false
     volumeMounts:
     - name: fuse-fd-passing
       mountPath: /fuse-fd-passing
@@ -27,6 +41,12 @@ spec:
     name: busybox
     command: ["sleep"]
     args: ["infinity"]
+    securityContext:
+      allowPrivilegeEscalation: false
+      capabilities:
+        drop:
+        - ALL
+      privileged: false
     volumeMounts:
     - name: fuse-csi-ephemeral
       mountPath: /data

@@ -13,39 +13,58 @@ RUN apt install -y ca-certificates wget libfuse2 fuse3
 # install sshfs
 RUN apt install -y sshfs
 
-# thanks to https://docs.docker.jp/engine/examples/running_ssh_service.html
 RUN apt install -y openssh-server
-RUN mkdir /var/run/sshd
-RUN echo 'root:screencast' | chpasswd
-RUN sed -i 's/#PermitRootLogin prohibit-password/PermitRootLogin yes/' /etc/ssh/sshd_config
+RUN useradd --create-home --shell /bin/bash --uid 1000 app
 
-# SSH login fix. Otherwise user is kicked off after login
-RUN sed 's@session\s*required\s*pam_loginuid.so@session optional pam_loginuid.so@g' -i /etc/pam.d/sshd
+WORKDIR /home/app
+ENV HOME=/home/app
 
-ENV NOTVISIBLE="in users profile"
-RUN echo "export VISIBLE=now" >> /etc/profile
-RUN ssh-keygen -f /root/.ssh/example -P ""
-RUN cat /root/.ssh/example.pub > /root/.ssh/authorized_keys
-
-COPY <<EOF /root/.ssh/config
-Host *
-    StrictHostKeyChecking no
-
+RUN mkdir -p /home/app/.ssh /home/app/sshd /home/app/sshfs-example/subdir && \
+    ssh-keygen -q -t ed25519 -f /home/app/.ssh/id_ed25519 -N "" && \
+    cp /home/app/.ssh/id_ed25519.pub /home/app/.ssh/authorized_keys && \
+    ssh-keygen -q -t ed25519 -f /home/app/sshd/ssh_host_ed25519_key -N "" && \
+    cat <<'EOF' > /home/app/.ssh/config
 Host localhost
-    User root
-    IdentityFile /root/.ssh/example
+    HostName 127.0.0.1
+    Port 2222
+    User app
+    IdentityFile /home/app/.ssh/id_ed25519
+    StrictHostKeyChecking no
+    UserKnownHostsFile /dev/null
+EOF
+RUN cat <<'EOF' > /home/app/sshd/sshd_config
+Port 2222
+ListenAddress 127.0.0.1
+HostKey /home/app/sshd/ssh_host_ed25519_key
+AuthorizedKeysFile /home/app/.ssh/authorized_keys
+PidFile /home/app/sshd/sshd.pid
+PasswordAuthentication no
+KbdInteractiveAuthentication no
+ChallengeResponseAuthentication no
+UsePAM no
+PermitRootLogin no
+PubkeyAuthentication yes
+Subsystem sftp internal-sftp
 EOF
 
-RUN mkdir -p /root/sshfs-example/subdir
-RUN echo "This file is an example for sshfs" > /root/sshfs-example/subdir/test.txt
+RUN echo "This file is an example for sshfs" > /home/app/sshfs-example/subdir/test.txt && \
+    chown -R app:app /home/app && \
+    chmod 700 /home/app/.ssh /home/app/sshd && \
+    chmod 600 /home/app/.ssh/id_ed25519 /home/app/.ssh/authorized_keys /home/app/sshd/ssh_host_ed25519_key
 
-COPY <<EOF /entrypoint.sh
+COPY <<'EOF' /entrypoint.sh
 #!/bin/bash
+set -euo pipefail
 
-/usr/sbin/sshd -D &
+/usr/sbin/sshd -D -e -f /home/app/sshd/sshd_config &
 sleep 1
 
-/mfcp-bin/fuse-starter --fd-passing-socket-path /fuse-fd-passing/fuse-csi-ephemeral.sock -- /usr/bin/sshfs root@localhost:/root/sshfs-example /dev/fd/3 -f &
+/mfcp-bin/fuse-starter --fd-passing-socket-path /fuse-fd-passing/fuse-csi-ephemeral.sock -- \
+  /usr/bin/sshfs app@127.0.0.1:/home/app/sshfs-example /dev/fd/3 -f \
+  -p 2222 \
+  -o IdentityFile=/home/app/.ssh/id_ed25519 \
+  -o StrictHostKeyChecking=no \
+  -o UserKnownHostsFile=/dev/null &
 
 wait -n
 exit $?
@@ -55,5 +74,7 @@ RUN chmod +x /entrypoint.sh
 
 RUN mkdir /mfcp-bin
 COPY --from=fuse-starter-builder /bin/fuse-starter /mfcp-bin/fuse-starter
+
+USER 1000:1000
 
 CMD ["/entrypoint.sh"]

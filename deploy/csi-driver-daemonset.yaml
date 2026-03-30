@@ -24,7 +24,7 @@ spec:
           valueFrom:
             fieldRef:
               fieldPath: spec.nodeName
-        image: ghcr.io/pfnet-research/meta-fuse-csi-plugin/meta-fuse-csi-plugin:latest
+        image: ghcr.io/tak-55/meta-fuse-csi-plugin/meta-fuse-csi-plugin:latest
         imagePullPolicy: IfNotPresent
         name: meta-fuse-csi-plugin
         resources:

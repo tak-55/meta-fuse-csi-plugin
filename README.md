@@ -26,6 +26,116 @@ Excepting gcsfuse, you can run examples in local kind cluster.
 ## Running an example in local kind cluster
 You can try this plugin with local kind cluster
 
+## 公開コンテナイメージ
+コンテナイメージは GitHub Container Registry の `ghcr.io/tak-55/meta-fuse-csi-plugin` に公開されます。
+
+- CSI driver: `ghcr.io/tak-55/meta-fuse-csi-plugin/meta-fuse-csi-plugin`
+- proxy s3fs example: `ghcr.io/tak-55/meta-fuse-csi-plugin/mfcp-example-proxy-s3fs`
+- proxy sshfs example: `ghcr.io/tak-55/meta-fuse-csi-plugin/mfcp-example-proxy-sshfs`
+- starter sshfs example: `ghcr.io/tak-55/meta-fuse-csi-plugin/mfcp-example-starter-sshfs`
+
+`main` への push で最新の GHCR イメージが publish され、`latest` タグも更新されます。`v*` タグを push した場合は、同じ名前の version tag でも publish されます。
+
+## 既存の Linux Kubernetes クラスタで検証する
+公開済み GHCR イメージを pull して、既存の Linux Kubernetes クラスタで検証できます。
+運用中の S3 / SFTP を使う場合は、git 管理外のローカル設定を `./cluster-test-config` に置き、`./test_existing_cluster.sh --config-dir ./cluster-test-config` を使ってください。
+
+### 前提条件
+- Linux worker node があること
+- CSI node plugin DaemonSet を `privileged` で動かせること
+- sidecar / restartable init container が使えること
+- `hostUsers: false` をサポートする container runtime であること
+
+### 1. `hostUsers: false` の smoke test
+plugin を deploy する前に、cluster runtime が最小構成の `hostUsers: false` Pod を受け付けることを確認してください。
+
+```console
+$ kubectl apply -f - <<'EOF'
+apiVersion: v1
+kind: Pod
+metadata:
+  name: hostusers-smoke
+spec:
+  hostUsers: false
+  securityContext:
+    runAsNonRoot: true
+    runAsUser: 1000
+    runAsGroup: 1000
+    seccompProfile:
+      type: RuntimeDefault
+  containers:
+  - name: main
+    image: busybox
+    command: ["sleep", "60"]
+    securityContext:
+      privileged: false
+      allowPrivilegeEscalation: false
+      capabilities:
+        drop: ["ALL"]
+EOF
+$ kubectl wait --for=condition=Ready pod/hostusers-smoke --timeout=60s
+$ kubectl delete pod/hostusers-smoke
+```
+
+この Pod が起動前に失敗する場合は、先に cluster runtime 側の問題を解消してください。たとえば kind では `hostUsers: false` 有効時に `mount-product-files.sh: permission denied` で早期失敗することがあります。
+
+### 2. CSI driver を deploy する
+既定の manifest は GHCR の `latest` を参照します。
+
+```console
+$ kubectl apply -f ./deploy/csi-driver.yaml
+$ kubectl apply -f ./deploy/csi-driver-daemonset.yaml
+$ kubectl rollout status ds/meta-fuse-csi-plugin -n mfcp-system
+$ kubectl get ds -n mfcp-system
+```
+
+一連の検証を 1 コマンドで流したい場合は次を使ってください。
+
+```console
+$ ./test_existing_cluster.sh
+```
+
+self-contained な example の代わりに、運用中の S3 / SFTP を使って検証する場合は次のように設定ファイルを配置します。
+
+```console
+$ mkdir -p ./cluster-test-config/sshfs
+$ cp ./examples/existing-cluster/s3.env.example ./cluster-test-config/s3.env
+$ cp ./examples/existing-cluster/sshfs.env.example ./cluster-test-config/sshfs.env
+$ cp /path/to/your/id_ed25519 ./cluster-test-config/sshfs/id_ed25519
+$ cp /path/to/your/known_hosts ./cluster-test-config/sshfs/known_hosts # 任意ですが推奨
+$ ./test_existing_cluster.sh --config-dir ./cluster-test-config
+```
+
+### 3. `proxy/s3fs` を検証する
+この example は Pod 内で MinIO を起動し、`starter` container 側の内容と `busybox` container から見える mount 結果が一致することを確認します。
+
+```console
+$ kubectl apply -f ./examples/proxy/s3fs/deploy.yaml
+$ ./examples/check.sh ./proxy/s3fs mfcp-example-proxy-s3fs starter /test.txt busybox /data/subdir/test.txt
+```
+
+### 4. `proxy/sshfs` を検証する
+この example は公開済みの `ghcr.io/tak-55/meta-fuse-csi-plugin/mfcp-example-proxy-sshfs:latest` を使います。
+
+```console
+$ kubectl apply -f ./examples/proxy/sshfs/deploy.yaml
+$ ./examples/check.sh ./proxy/sshfs mfcp-example-proxy-sshfs starter /home/app/sshfs-example/subdir/test.txt busybox /data/subdir/test.txt
+```
+
+### 5. `starter/sshfs` を検証する
+この example は direct fd-passing approach を使います。
+
+```console
+$ kubectl apply -f ./examples/starter/sshfs/deploy.yaml
+$ ./examples/check.sh ./starter/sshfs mfcp-example-starter-sshfs starter /home/app/sshfs-example/subdir/test.txt busybox /data/subdir/test.txt
+```
+
+### 6. Troubleshooting
+- CSI node plugin の状態確認: `kubectl logs -n mfcp-system ds/meta-fuse-csi-plugin -c meta-fuse-csi-plugin`
+- example sidecar の log: `kubectl logs POD_NAME -c starter`
+- Pod 起動時の詳細: `kubectl describe pod POD_NAME`
+- cleanup: `kubectl delete -f ./examples/proxy/s3fs/deploy.yaml`, `kubectl delete -f ./examples/proxy/sshfs/deploy.yaml`, `kubectl delete -f ./examples/starter/sshfs/deploy.yaml`
+
 ### Dependencies
 - [docker](https://docs.docker.com/engine/install/ubuntu/)
 - [kubectl](https://kubernetes.io/docs/tasks/tools/)

@@ -5,17 +5,46 @@ metadata:
   namespace: default
 spec:
   terminationGracePeriodSeconds: 10
+  hostUsers: false
+  securityContext:
+    runAsNonRoot: true
+    runAsUser: 1000
+    runAsGroup: 1000
+    fsGroup: 1000
+    seccompProfile:
+      type: RuntimeDefault
   initContainers:
+  - name: prepare-fuse-dev
+    image: busybox
+    command: ['sh', '-c', 'touch /fake-dev/fuse && chmod 0666 /fake-dev/fuse']
+    securityContext:
+      allowPrivilegeEscalation: false
+      capabilities:
+        drop:
+        - ALL
+      privileged: false
+    volumeMounts:
+    - name: fake-dev-fuse
+      mountPath: /fake-dev
   - name: starter
     restartPolicy: Always
-    image: ghcr.io/pfnet-research/meta-fuse-csi-plugin/mfcp-example-proxy-sshfs:latest
+    image: ghcr.io/tak-55/meta-fuse-csi-plugin/mfcp-example-proxy-sshfs:latest
     imagePullPolicy: IfNotPresent
     env:
     - name: FUSERMOUNT3PROXY_FDPASSING_SOCKPATH
       value: "/fusermount3-proxy/fuse-csi-ephemeral.sock"
+    securityContext:
+      allowPrivilegeEscalation: false
+      capabilities:
+        drop:
+        - ALL
+      privileged: false
     volumeMounts:
     - name: fuse-fd-passing
       mountPath: /fusermount3-proxy
+    - name: fake-dev-fuse
+      mountPath: /dev/fuse
+      subPath: fuse
     - name: fuse-csi-ephemeral
       mountPath: /data
       readOnly: true
@@ -30,6 +59,12 @@ spec:
     name: busybox
     command: ["sleep"]
     args: ["infinity"]
+    securityContext:
+      allowPrivilegeEscalation: false
+      capabilities:
+        drop:
+        - ALL
+      privileged: false
     volumeMounts:
     - name: fuse-csi-ephemeral
       mountPath: /data
@@ -42,6 +77,8 @@ spec:
       mountPropagation: HostToContainer
   volumes:
   - name: fuse-fd-passing
+    emptyDir: {}
+  - name: fake-dev-fuse
     emptyDir: {}
   - name: fuse-csi-ephemeral
     csi:

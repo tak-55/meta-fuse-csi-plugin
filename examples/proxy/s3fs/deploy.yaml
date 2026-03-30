@@ -5,19 +5,47 @@ metadata:
   namespace: default
 spec:
   terminationGracePeriodSeconds: 10
+  hostUsers: false
+  securityContext:
+    runAsNonRoot: true
+    runAsUser: 1000
+    runAsGroup: 1000
+    fsGroup: 1000
+    seccompProfile:
+      type: RuntimeDefault
   initContainers:
+  - name: prepare-fuse-dev
+    image: busybox
+    command: ['sh', '-c', 'touch /fake-dev/fuse && chmod 0666 /fake-dev/fuse']
+    securityContext:
+      allowPrivilegeEscalation: false
+      capabilities:
+        drop:
+        - ALL
+      privileged: false
+    volumeMounts:
+    - name: fake-dev-fuse
+      mountPath: /fake-dev
   - name: minio
     restartPolicy: Always
     image: quay.io/minio/minio:latest
     command: ["/bin/bash"]
     args: ["-c", "minio server /data --console-address :9090"]
+    securityContext:
+      allowPrivilegeEscalation: false
+      capabilities:
+        drop:
+        - ALL
+      privileged: false
+    volumeMounts:
+    - name: minio-data
+      mountPath: /data
   - name: starter
     restartPolicy: Always
-    image: ghcr.io/pfnet-research/meta-fuse-csi-plugin/mfcp-example-proxy-s3fs:latest
+    image: ghcr.io/tak-55/meta-fuse-csi-plugin/mfcp-example-proxy-s3fs:latest
     imagePullPolicy: IfNotPresent
     command: ["/bin/bash"]
-    # This allows libfuse to use fusermount3. Its detail is described in examples/proxy/sshfs/README.md
-    args: ["-c", "./configure_minio.sh && touch /dev/fuse && s3fs test-bucket /tmp -o url=http://localhost:9000 -o use_path_request_style -f"]
+    args: ["-c", "./configure_minio.sh && s3fs test-bucket /tmp -o url=http://localhost:9000 -o use_path_request_style -f"]
     env:
     - name: FUSERMOUNT3PROXY_FDPASSING_SOCKPATH
       value: "/fusermount3-proxy/fuse-csi-ephemeral.sock"
@@ -25,9 +53,18 @@ spec:
       value: "minioadmin"
     - name: AWS_SECRET_ACCESS_KEY
       value: "minioadmin"
+    securityContext:
+      allowPrivilegeEscalation: false
+      capabilities:
+        drop:
+        - ALL
+      privileged: false
     volumeMounts:
     - name: fuse-fd-passing
       mountPath: /fusermount3-proxy
+    - name: fake-dev-fuse
+      mountPath: /dev/fuse
+      subPath: fuse
     - name: fuse-csi-ephemeral
       mountPath: /data
       readOnly: true
@@ -42,6 +79,12 @@ spec:
     name: busybox
     command: ["sleep"]
     args: ["infinity"]
+    securityContext:
+      allowPrivilegeEscalation: false
+      capabilities:
+        drop:
+        - ALL
+      privileged: false
     volumeMounts:
     - name: fuse-csi-ephemeral
       mountPath: /data
@@ -54,6 +97,10 @@ spec:
       mountPropagation: HostToContainer
   volumes:
   - name: fuse-fd-passing
+    emptyDir: {}
+  - name: fake-dev-fuse
+    emptyDir: {}
+  - name: minio-data
     emptyDir: {}
   - name: fuse-csi-ephemeral
     csi:

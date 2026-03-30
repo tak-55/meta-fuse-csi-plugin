@@ -35,12 +35,6 @@ import (
 	"k8s.io/mount-utils"
 )
 
-const (
-	// See the nonroot user discussion: https://github.com/GoogleContainerTools/distroless/issues/443
-	NobodyUID = 65534
-	NobodyGID = 65534
-)
-
 // Mounter provides the meta-fuse-csi-plugin implementation of mount.Interface
 // for the linux platform.
 type Mounter struct {
@@ -166,14 +160,8 @@ func (m *Mounter) createAndRegisterFdPassingSocket(target, sockDir, sockName str
 
 	unixListner := l.(*net.UnixListener)
 
-	// Change the socket ownership
-	err = os.Chown(sockDir, NobodyUID, NobodyGID)
-	if err != nil {
-		return fmt.Errorf("failed to change ownership on emptyDirBasePath: %w", err)
-	}
-	err = os.Chown(sockName, NobodyUID, NobodyGID)
-	if err != nil {
-		return fmt.Errorf("failed to change ownership on socket: %w", err)
+	if err = syncSocketPermissionsWithDir(sockDir, sockName); err != nil {
+		return fmt.Errorf("failed to align socket access with emptyDir: %w", err)
 	}
 
 	if err = os.Chdir(exPwd); err != nil {
@@ -183,6 +171,32 @@ func (m *Mounter) createAndRegisterFdPassingSocket(target, sockDir, sockName str
 	sockPath := filepath.Join(sockDir, sockName)
 	if err = m.FdPassingSockets.register(target, sockPath, unixListner); err != nil {
 		return fmt.Errorf("failed to register socket at %q: %w", sockPath, err)
+	}
+
+	return nil
+}
+
+func syncSocketPermissionsWithDir(sockDir, sockName string) error {
+	dirInfo, err := os.Stat(sockDir)
+	if err != nil {
+		return fmt.Errorf("failed to stat socket dir %q: %w", sockDir, err)
+	}
+
+	stat, ok := dirInfo.Sys().(*syscall.Stat_t)
+	if !ok {
+		return fmt.Errorf("failed to read socket dir ownership for %q", sockDir)
+	}
+
+	if err := os.Chown(sockName, int(stat.Uid), int(stat.Gid)); err != nil {
+		return fmt.Errorf("failed to change ownership on socket: %w", err)
+	}
+
+	socketPerm := dirInfo.Mode().Perm() & 0o666
+	if socketPerm == 0 {
+		socketPerm = 0o600
+	}
+	if err := os.Chmod(sockName, socketPerm); err != nil {
+		return fmt.Errorf("failed to change mode on socket: %w", err)
 	}
 
 	return nil

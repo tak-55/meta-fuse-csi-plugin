@@ -45,7 +45,7 @@ spec:
     image: ghcr.io/tak-55/meta-fuse-csi-plugin/mfcp-example-proxy-s3fs:latest
     imagePullPolicy: Always
     command: ["/bin/bash"]
-    args: ["-c", "./configure_minio.sh && s3fs test-bucket /tmp -o url=http://localhost:9000 -o use_path_request_style -f"]
+    args: ["-c", "./configure_minio.sh && s3fs test-bucket /tmp -o url=http://localhost:9000 -o use_path_request_style -o uid=1000 -o gid=1000 -o umask=007 -f"]
     env:
     - name: FUSERMOUNT3PROXY_FDPASSING_SOCKPATH
       value: "/fusermount3-proxy/fuse-csi-ephemeral.sock"

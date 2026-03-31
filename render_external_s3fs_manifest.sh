@@ -215,11 +215,12 @@ spec:
     command: ["/bin/bash", "-lc"]
     args:
     - |
+      s3fs_default_args="-o uid=1000 -o gid=1000 -o umask=007"
       region_arg=""
       if [[ -n "\${S3_REGION:-}" ]]; then
         region_arg="-o endpoint=\${S3_REGION}"
       fi
-      exec s3fs "\$S3_BUCKET" /tmp -f -o passwd_file=/s3fs-passwd/passwd-s3fs -o url="\$S3_ENDPOINT" \${region_arg} \${S3FS_ARGS:-}
+      exec s3fs "\$S3_BUCKET" /tmp -f -o passwd_file=/s3fs-passwd/passwd-s3fs -o url="\$S3_ENDPOINT" \${s3fs_default_args} \${region_arg} \${S3FS_ARGS:-}
     env:
     - name: FUSERMOUNT3PROXY_FDPASSING_SOCKPATH
       value: /fusermount3-proxy/fuse-csi-ephemeral.sock

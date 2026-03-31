@@ -359,7 +359,8 @@ spec:
     command: ["/bin/bash", "-lc"]
     args:
     - |
-      exec s3fs "${S3_BUCKET}" /tmp -f -o passwd_file=/s3fs-passwd/passwd-s3fs -o url="${S3_ENDPOINT}" ${s3_region_arg} ${S3FS_ARGS:-}
+      s3fs_default_args="-o uid=1000 -o gid=1000 -o umask=007"
+      exec s3fs "${S3_BUCKET}" /tmp -f -o passwd_file=/s3fs-passwd/passwd-s3fs -o url="${S3_ENDPOINT}" ${s3fs_default_args} ${s3_region_arg} ${S3FS_ARGS:-}
     env:
     - name: FUSERMOUNT3PROXY_FDPASSING_SOCKPATH
       value: /fusermount3-proxy/fuse-csi-ephemeral.sock

@@ -110,7 +110,7 @@ $ ./render_external_s3fs_manifest.sh --config-dir ./cluster-test-config > /tmp/e
 $ kubectl apply -f /tmp/external-s3fs.yaml
 ```
 
-`proxy/s3fs` の external test では、`s3.env` の `AWS_ACCESS_KEY_ID` / `AWS_SECRET_ACCESS_KEY` から一時的な `passwd_file` を生成し、その認証情報を `s3fs` に明示的に渡します。
+`proxy/s3fs` の external test では、`s3.env` の `AWS_ACCESS_KEY_ID` / `AWS_SECRET_ACCESS_KEY` から一時的な `passwd_file` を生成し、その認証情報を `s3fs` に明示的に渡します。非 root の restricted Pod で `/data` を読みやすくするため、`s3fs` には既定で `-o uid=1000 -o gid=1000 -o umask=007` も渡します。
 region が必要な S3 互換 endpoint を使う場合は、`s3.env` に `S3_REGION=...` を設定してください。
 
 ### 3. `proxy/s3fs` を検証する

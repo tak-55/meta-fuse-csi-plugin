@@ -22,3 +22,10 @@ $ ./test_existing_cluster.sh --config-dir ./cluster-test-config
 $ ./render_external_s3fs_manifest.sh --config-dir ./cluster-test-config > /tmp/external-s3fs.yaml
 $ kubectl apply -f /tmp/external-s3fs.yaml
 ```
+
+そのまま雛形として使える運用向け manifest も用意しています。
+
+- `examples/existing-cluster/production-s3fs-deployment.yaml`
+- `examples/existing-cluster/production-sshfs-deployment.yaml`
+
+どちらも `Deployment + restartable init sidecar + app container` の構成で、user Pod は `restricted` / non-root のまま `/data` を app container から参照できます。secret / endpoint / app image は実環境の値に置き換えてください。

@@ -1,0 +1,182 @@
+apiVersion: v1
+kind: Secret
+metadata:
+  name: mfcp-prod-s3
+  namespace: default
+type: Opaque
+stringData:
+  AWS_ACCESS_KEY_ID: replace-me
+  AWS_SECRET_ACCESS_KEY: replace-me
+  # AWS_SESSION_TOKEN: optional
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: mfcp-prod-s3fs-config
+  namespace: default
+data:
+  S3_BUCKET: example-bucket
+  S3_ENDPOINT: https://s3.example.com
+  S3_REGION: ap-northeast-1
+  S3FS_ARGS: "-o use_path_request_style"
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mfcp-prod-s3fs-app
+  namespace: default
+spec:
+  replicas: 1
+  revisionHistoryLimit: 2
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: mfcp-prod-s3fs-app
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: mfcp-prod-s3fs-app
+    spec:
+      terminationGracePeriodSeconds: 30
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        runAsGroup: 1000
+        fsGroup: 1000
+        seccompProfile:
+          type: RuntimeDefault
+      initContainers:
+      - name: prepare-fuse-dev
+        image: busybox:1.36
+        command: ["sh", "-c", "touch /fake-dev/fuse && chmod 0666 /fake-dev/fuse"]
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop: ["ALL"]
+          privileged: false
+        resources:
+          requests:
+            cpu: 5m
+            memory: 16Mi
+          limits:
+            cpu: 50m
+            memory: 64Mi
+        volumeMounts:
+        - name: fake-dev-fuse
+          mountPath: /fake-dev
+      - name: prepare-s3fs-passwd
+        image: busybox:1.36
+        command: ["/bin/sh", "-c"]
+        args:
+        - |
+          umask 077
+          printf '%s:%s\n' "$AWS_ACCESS_KEY_ID" "$AWS_SECRET_ACCESS_KEY" > /s3fs-passwd/passwd-s3fs
+        envFrom:
+        - secretRef:
+            name: mfcp-prod-s3
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop: ["ALL"]
+          privileged: false
+        resources:
+          requests:
+            cpu: 5m
+            memory: 16Mi
+          limits:
+            cpu: 50m
+            memory: 64Mi
+        volumeMounts:
+        - name: s3fs-passwd
+          mountPath: /s3fs-passwd
+      - name: fuse-sidecar
+        restartPolicy: Always
+        image: ghcr.io/tak-55/meta-fuse-csi-plugin/mfcp-example-proxy-s3fs:latest
+        imagePullPolicy: Always
+        command: ["/bin/bash", "-lc"]
+        args:
+        - |
+          set -euo pipefail
+          s3fs_default_args="-o umask=000"
+          region_arg=""
+          if [[ -n "${S3_REGION:-}" ]]; then
+            region_arg="-o endpoint=${S3_REGION}"
+          fi
+          exec s3fs "${S3_BUCKET}" /tmp -f -o passwd_file=/s3fs-passwd/passwd-s3fs -o url="${S3_ENDPOINT}" ${s3fs_default_args} ${region_arg} ${S3FS_ARGS:-}
+        env:
+        - name: FUSERMOUNT3PROXY_FDPASSING_SOCKPATH
+          value: /fusermount3-proxy/fuse-csi-ephemeral.sock
+        envFrom:
+        - secretRef:
+            name: mfcp-prod-s3
+        - configMapRef:
+            name: mfcp-prod-s3fs-config
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop: ["ALL"]
+          privileged: false
+        resources:
+          requests:
+            cpu: 50m
+            memory: 128Mi
+          limits:
+            cpu: 500m
+            memory: 512Mi
+        startupProbe:
+          exec:
+            command: ["sh", "-c", "mount | grep ' /data ' | grep fuse"]
+          failureThreshold: 300
+          periodSeconds: 1
+        volumeMounts:
+        - name: fuse-fd-passing
+          mountPath: /fusermount3-proxy
+        - name: fake-dev-fuse
+          mountPath: /dev/fuse
+          subPath: fuse
+        - name: s3fs-passwd
+          mountPath: /s3fs-passwd
+          readOnly: true
+        - name: fuse-csi-ephemeral
+          mountPath: /data
+          readOnly: true
+          mountPropagation: HostToContainer
+      containers:
+      - name: app
+        image: busybox:1.36
+        command: ["/bin/sh", "-lc"]
+        args:
+        - |
+          echo "Replace this container with your application."
+          sleep infinity
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop: ["ALL"]
+          privileged: false
+        resources:
+          requests:
+            cpu: 10m
+            memory: 32Mi
+          limits:
+            cpu: 200m
+            memory: 256Mi
+        volumeMounts:
+        - name: fuse-csi-ephemeral
+          mountPath: /data
+          readOnly: true
+          mountPropagation: HostToContainer
+      volumes:
+      - name: fuse-fd-passing
+        emptyDir: {}
+      - name: fake-dev-fuse
+        emptyDir: {}
+      - name: s3fs-passwd
+        emptyDir: {}
+      - name: fuse-csi-ephemeral
+        csi:
+          driver: meta-fuse-csi-plugin.csi.storage.pfn.io
+          readOnly: true
+          volumeAttributes:
+            fdPassingEmptyDirName: fuse-fd-passing
+            fdPassingSocketName: fuse-csi-ephemeral.sock
+            mountOptions: volume-mount-group=1000

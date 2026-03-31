@@ -403,6 +403,7 @@ spec:
       volumeAttributes:
         fdPassingEmptyDirName: fuse-fd-passing
         fdPassingSocketName: fuse-csi-ephemeral.sock
+        mountOptions: volume-mount-group=1000
 EOF
 }
 
@@ -526,6 +527,7 @@ spec:
       volumeAttributes:
         fdPassingEmptyDirName: fuse-fd-passing
         fdPassingSocketName: fuse-csi-ephemeral.sock
+        mountOptions: volume-mount-group=1000
 EOF
 
     cat > "${TMP_DIR}/external-starter-sshfs.yaml" <<EOF
@@ -590,6 +592,7 @@ spec:
       volumeAttributes:
         fdPassingEmptyDirName: fuse-fd-passing
         fdPassingSocketName: fuse-csi-ephemeral.sock
+        mountOptions: volume-mount-group=1000
 EOF
 }
 

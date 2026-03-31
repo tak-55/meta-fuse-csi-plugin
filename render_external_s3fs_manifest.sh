@@ -265,6 +265,7 @@ spec:
       volumeAttributes:
         fdPassingEmptyDirName: fuse-fd-passing
         fdPassingSocketName: fuse-csi-ephemeral.sock
+        mountOptions: volume-mount-group=1000
 EOF
 }
 

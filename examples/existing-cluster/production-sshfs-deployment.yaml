@@ -2,7 +2,6 @@ apiVersion: v1
 kind: Secret
 metadata:
   name: mfcp-prod-sshfs
-  namespace: default
 type: Opaque
 stringData:
   id_ed25519: |
@@ -16,7 +15,6 @@ apiVersion: v1
 kind: ConfigMap
 metadata:
   name: mfcp-prod-sshfs-config
-  namespace: default
 data:
   SSHFS_HOST: sftp.example.com
   SSHFS_PORT: "22"
@@ -28,7 +26,6 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: mfcp-prod-sshfs-app
-  namespace: default
 spec:
   replicas: 1
   revisionHistoryLimit: 2

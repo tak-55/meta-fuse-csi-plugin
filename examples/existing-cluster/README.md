@@ -13,7 +13,7 @@ cluster-test-config/
     └── known_hosts   # 任意ですが推奨
 ```
 
-準備後は次のように実行します:
+準備後は次のように実行します。
 
 ```console
 $ cp ./examples/existing-cluster/s3.env.example ./cluster-test-config/s3.env
@@ -28,4 +28,4 @@ $ kubectl apply -f /tmp/external-s3fs.yaml
 - `examples/existing-cluster/production-s3fs-deployment.yaml`
 - `examples/existing-cluster/production-sshfs-deployment.yaml`
 
-どちらも `Deployment + restartable init sidecar + app container` の構成で、user Pod は `restricted` / non-root のまま `/data` を app container から参照できます。secret / endpoint / app image は実環境の値に置き換えてください。
+どちらも `Deployment + restartable init sidecar + app container` の構成で、user Pod は `restricted` / non-root のまま `/data` を app container から参照できます。必要に応じて `metadata.namespace` を追加してください。secret / endpoint / app image は実環境の値に置き換えてください。

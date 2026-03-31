@@ -2,7 +2,6 @@ apiVersion: v1
 kind: Secret
 metadata:
   name: mfcp-prod-s3
-  namespace: default
 type: Opaque
 stringData:
   AWS_ACCESS_KEY_ID: replace-me
@@ -13,7 +12,6 @@ apiVersion: v1
 kind: ConfigMap
 metadata:
   name: mfcp-prod-s3fs-config
-  namespace: default
 data:
   S3_BUCKET: example-bucket
   S3_ENDPOINT: https://s3.example.com
@@ -24,7 +22,6 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: mfcp-prod-s3fs-app
-  namespace: default
 spec:
   replicas: 1
   revisionHistoryLimit: 2

@@ -363,7 +363,7 @@ spec:
     command: ["/bin/bash", "-lc"]
     args:
     - |
-      s3fs_default_args="-o uid=1000 -o gid=1000 -o umask=007 -o mp_umask=007 -o dir_mode=0770 -o file_mode=0660"
+      s3fs_default_args="-o umask=000"
       exec s3fs "${S3_BUCKET}" /tmp -f -o passwd_file=/s3fs-passwd/passwd-s3fs -o url="${S3_ENDPOINT}" ${s3fs_default_args} ${s3_region_arg} ${S3FS_ARGS:-}
     env:
     - name: FUSERMOUNT3PROXY_FDPASSING_SOCKPATH
@@ -488,7 +488,7 @@ spec:
       if [ -f /ssh-config/known_hosts ]; then
         known_hosts_args="-o StrictHostKeyChecking=yes -o UserKnownHostsFile=/ssh-config/known_hosts"
       fi
-      exec /usr/bin/sshfs "${SSHFS_USER}@${SSHFS_HOST}:${SSHFS_REMOTE_PATH}" /tmp -f -p "${SSHFS_PORT}" -o IdentityFile=/ssh-config/id_ed25519 ${SSHFS_ARGS:-} ${known_hosts_args}
+      exec /usr/bin/sshfs "${SSHFS_USER}@${SSHFS_HOST}:${SSHFS_REMOTE_PATH}" /tmp -f -p "${SSHFS_PORT}" -o allow_other -o umask=000 -o IdentityFile=/ssh-config/id_ed25519 ${SSHFS_ARGS:-} ${known_hosts_args}
     env:
     - name: FUSERMOUNT3PROXY_FDPASSING_SOCKPATH
       value: /fusermount3-proxy/fuse-csi-ephemeral.sock
@@ -560,7 +560,7 @@ spec:
       if [ -f /ssh-config/known_hosts ]; then
         known_hosts_args="-o StrictHostKeyChecking=yes -o UserKnownHostsFile=/ssh-config/known_hosts"
       fi
-      exec /mfcp-bin/fuse-starter --fd-passing-socket-path /fuse-fd-passing/fuse-csi-ephemeral.sock -- /usr/bin/sshfs "${SSHFS_USER}@${SSHFS_HOST}:${SSHFS_REMOTE_PATH}" /dev/fd/3 -f -p "${SSHFS_PORT}" -o IdentityFile=/ssh-config/id_ed25519 ${SSHFS_ARGS:-} ${known_hosts_args}
+      exec /mfcp-bin/fuse-starter --fd-passing-socket-path /fuse-fd-passing/fuse-csi-ephemeral.sock -- /usr/bin/sshfs "${SSHFS_USER}@${SSHFS_HOST}:${SSHFS_REMOTE_PATH}" /dev/fd/3 -f -p "${SSHFS_PORT}" -o allow_other -o umask=000 -o IdentityFile=/ssh-config/id_ed25519 ${SSHFS_ARGS:-} ${known_hosts_args}
     securityContext:
       allowPrivilegeEscalation: false
       capabilities:

@@ -214,7 +214,7 @@ spec:
     command: ["/bin/bash", "-lc"]
     args:
     - |
-      s3fs_default_args="-o uid=1000 -o gid=1000 -o umask=007 -o mp_umask=007 -o dir_mode=0770 -o file_mode=0660"
+      s3fs_default_args="-o umask=000"
       region_arg=""
       if [[ -n "\${S3_REGION:-}" ]]; then
         region_arg="-o endpoint=\${S3_REGION}"

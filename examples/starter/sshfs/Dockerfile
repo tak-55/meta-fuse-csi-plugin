@@ -64,6 +64,8 @@ sleep 1
 /mfcp-bin/fuse-starter --fd-passing-socket-path /fuse-fd-passing/fuse-csi-ephemeral.sock -- \
   /usr/bin/sshfs app@127.0.0.1:/home/app/sshfs-example /dev/fd/3 -f \
   -p 2222 \
+  -o allow_other \
+  -o umask=000 \
   -o IdentityFile=/home/app/.ssh/id_ed25519 \
   -o StrictHostKeyChecking=no \
   -o UserKnownHostsFile=/dev/null &

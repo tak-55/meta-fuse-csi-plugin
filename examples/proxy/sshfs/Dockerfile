@@ -63,6 +63,8 @@ sleep 1
 
 /usr/bin/sshfs app@127.0.0.1:/home/app/sshfs-example /tmp -f \
   -p 2222 \
+  -o allow_other \
+  -o umask=000 \
   -o IdentityFile=/home/app/.ssh/id_ed25519 \
   -o StrictHostKeyChecking=no \
   -o UserKnownHostsFile=/dev/null &

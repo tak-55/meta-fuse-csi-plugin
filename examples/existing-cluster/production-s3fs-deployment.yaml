@@ -135,7 +135,6 @@ spec:
           readOnly: true
         - name: fuse-csi-ephemeral
           mountPath: /data
-          readOnly: true
           mountPropagation: HostToContainer
       containers:
       - name: app
@@ -160,7 +159,6 @@ spec:
         volumeMounts:
         - name: fuse-csi-ephemeral
           mountPath: /data
-          readOnly: true
           mountPropagation: HostToContainer
       volumes:
       - name: fuse-fd-passing
@@ -172,7 +170,6 @@ spec:
       - name: fuse-csi-ephemeral
         csi:
           driver: meta-fuse-csi-plugin.csi.storage.pfn.io
-          readOnly: true
           volumeAttributes:
             fdPassingEmptyDirName: fuse-fd-passing
             fdPassingSocketName: fuse-csi-ephemeral.sock

@@ -359,7 +359,7 @@ spec:
     command: ["/bin/bash", "-lc"]
     args:
     - |
-      s3fs_default_args="-o uid=1000 -o gid=1000 -o umask=007"
+      s3fs_default_args="-o uid=1000 -o gid=1000 -o umask=007 -o mp_umask=007 -o dir_mode=0770 -o file_mode=0660"
       exec s3fs "${S3_BUCKET}" /tmp -f -o passwd_file=/s3fs-passwd/passwd-s3fs -o url="${S3_ENDPOINT}" ${s3fs_default_args} ${s3_region_arg} ${S3FS_ARGS:-}
     env:
     - name: FUSERMOUNT3PROXY_FDPASSING_SOCKPATH

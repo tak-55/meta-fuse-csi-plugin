@@ -114,11 +114,11 @@ $ kubectl apply -f /tmp/external-s3fs.yaml
 region が必要な S3 互換 endpoint を使う場合は、`s3.env` に `S3_REGION=...` を設定してください。
 
 ### 3. `proxy/s3fs` を検証する
-この example は Pod 内で MinIO を起動し、`starter` container 側の内容と `busybox` container から見える mount 結果が一致することを確認します。
+この example は Pod 内で MinIO を起動し、`starter` container 側の内容と `starter` container から見える `/data` の mount 結果が一致することを確認します。`hostUsers: false` の互換性のため、CSI volume は `starter` の 1 コンテナだけに mount します。
 
 ```console
 $ kubectl apply -f ./examples/proxy/s3fs/deploy.yaml
-$ ./examples/check.sh ./proxy/s3fs mfcp-example-proxy-s3fs starter /test.txt busybox /data/subdir/test.txt
+$ ./examples/check.sh ./proxy/s3fs mfcp-example-proxy-s3fs starter /test.txt starter /data/subdir/test.txt
 ```
 
 ### 4. `proxy/sshfs` を検証する
@@ -126,7 +126,7 @@ $ ./examples/check.sh ./proxy/s3fs mfcp-example-proxy-s3fs starter /test.txt bus
 
 ```console
 $ kubectl apply -f ./examples/proxy/sshfs/deploy.yaml
-$ ./examples/check.sh ./proxy/sshfs mfcp-example-proxy-sshfs starter /home/app/sshfs-example/subdir/test.txt busybox /data/subdir/test.txt
+$ ./examples/check.sh ./proxy/sshfs mfcp-example-proxy-sshfs starter /home/app/sshfs-example/subdir/test.txt starter /data/subdir/test.txt
 ```
 
 ### 5. `starter/sshfs` を検証する
@@ -134,7 +134,7 @@ $ ./examples/check.sh ./proxy/sshfs mfcp-example-proxy-sshfs starter /home/app/s
 
 ```console
 $ kubectl apply -f ./examples/starter/sshfs/deploy.yaml
-$ ./examples/check.sh ./starter/sshfs mfcp-example-starter-sshfs starter /home/app/sshfs-example/subdir/test.txt busybox /data/subdir/test.txt
+$ ./examples/check.sh ./starter/sshfs mfcp-example-starter-sshfs starter /home/app/sshfs-example/subdir/test.txt starter /data/subdir/test.txt
 ```
 
 ### 6. Troubleshooting

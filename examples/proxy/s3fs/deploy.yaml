@@ -40,8 +40,8 @@ spec:
     volumeMounts:
     - name: minio-data
       mountPath: /data
+  containers:
   - name: starter
-    restartPolicy: Always
     image: ghcr.io/tak-55/meta-fuse-csi-plugin/mfcp-example-proxy-s3fs:latest
     imagePullPolicy: Always
     command: ["/bin/bash"]
@@ -74,27 +74,6 @@ spec:
         command: ['sh', '-c', 'mount | grep /data | grep fuse']
       failureThreshold: 300
       periodSeconds: 1
-  containers:
-  - image: busybox
-    name: busybox
-    command: ["sleep"]
-    args: ["infinity"]
-    securityContext:
-      allowPrivilegeEscalation: false
-      capabilities:
-        drop:
-        - ALL
-      privileged: false
-    volumeMounts:
-    - name: fuse-csi-ephemeral
-      mountPath: /data
-      readOnly: true
-      mountPropagation: HostToContainer
-    - name: fuse-csi-ephemeral
-      mountPath: /data-subpath
-      readOnly: true
-      subPath: subdir
-      mountPropagation: HostToContainer
   volumes:
   - name: fuse-fd-passing
     emptyDir: {}

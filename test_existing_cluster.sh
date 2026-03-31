@@ -253,7 +253,7 @@ run_self_contained_s3fs() {
         mfcp-example-proxy-s3fs \
         starter \
         /test.txt \
-        busybox \
+        starter \
         /data/subdir/test.txt
 }
 
@@ -264,7 +264,7 @@ run_self_contained_proxy_sshfs() {
         mfcp-example-proxy-sshfs \
         starter \
         /home/app/sshfs-example/subdir/test.txt \
-        busybox \
+        starter \
         /data/subdir/test.txt
 }
 
@@ -275,7 +275,7 @@ run_self_contained_starter_sshfs() {
         mfcp-example-starter-sshfs \
         starter \
         /home/app/sshfs-example/subdir/test.txt \
-        busybox \
+        starter \
         /data/subdir/test.txt
 }
 
@@ -352,8 +352,8 @@ spec:
     volumeMounts:
     - name: s3fs-passwd
       mountPath: /s3fs-passwd
+  containers:
   - name: starter
-    restartPolicy: Always
     image: ${PROXY_S3FS_IMAGE}
     imagePullPolicy: ${IMAGE_PULL_POLICY}
     command: ["/bin/bash", "-lc"]
@@ -389,20 +389,6 @@ spec:
         command: ["sh", "-c", "mount | grep /data | grep fuse"]
       failureThreshold: 300
       periodSeconds: 1
-  containers:
-  - name: busybox
-    image: busybox
-    command: ["sleep", "infinity"]
-    securityContext:
-      allowPrivilegeEscalation: false
-      capabilities:
-        drop: ["ALL"]
-      privileged: false
-    volumeMounts:
-    - name: fuse-csi-ephemeral
-      mountPath: /data
-      readOnly: true
-      mountPropagation: HostToContainer
   volumes:
   - name: fuse-fd-passing
     emptyDir: {}
@@ -424,8 +410,8 @@ run_external_s3() {
     echo "Testing proxy/s3fs against external S3..."
     kubectl apply -f "${TMP_DIR}/external-s3fs.yaml"
     wait_for_pod_ready mfcp-external-proxy-s3fs
-    wait_for_fuse_mounted mfcp-external-proxy-s3fs busybox
-    assert_file_content mfcp-external-proxy-s3fs busybox "/data/${S3_TEST_FILE}" "${S3_EXPECTED_CONTENT}"
+    wait_for_fuse_mounted mfcp-external-proxy-s3fs starter
+    assert_file_content mfcp-external-proxy-s3fs starter "/data/${S3_TEST_FILE}" "${S3_EXPECTED_CONTENT}"
     kubectl delete -f "${TMP_DIR}/external-s3fs.yaml"
 }
 
@@ -485,8 +471,8 @@ spec:
     volumeMounts:
     - name: fake-dev-fuse
       mountPath: /fake-dev
+  containers:
   - name: starter
-    restartPolicy: Always
     image: ${PROXY_SSHFS_IMAGE}
     imagePullPolicy: ${IMAGE_PULL_POLICY}
     command: ["/bin/bash", "-lc"]
@@ -524,20 +510,6 @@ spec:
         command: ["sh", "-c", "mount | grep /data | grep fuse"]
       failureThreshold: 300
       periodSeconds: 1
-  containers:
-  - name: busybox
-    image: busybox
-    command: ["sleep", "infinity"]
-    securityContext:
-      allowPrivilegeEscalation: false
-      capabilities:
-        drop: ["ALL"]
-      privileged: false
-    volumeMounts:
-    - name: fuse-csi-ephemeral
-      mountPath: /data
-      readOnly: true
-      mountPropagation: HostToContainer
   volumes:
   - name: fuse-fd-passing
     emptyDir: {}
@@ -571,9 +543,8 @@ spec:
     fsGroup: 1000
     seccompProfile:
       type: RuntimeDefault
-  initContainers:
+  containers:
   - name: starter
-    restartPolicy: Always
     image: ${STARTER_SSHFS_IMAGE}
     imagePullPolicy: ${IMAGE_PULL_POLICY}
     command: ["/bin/bash", "-lc"]
@@ -605,20 +576,6 @@ spec:
         command: ["sh", "-c", "mount | grep /data | grep fuse"]
       failureThreshold: 300
       periodSeconds: 1
-  containers:
-  - name: busybox
-    image: busybox
-    command: ["sleep", "infinity"]
-    securityContext:
-      allowPrivilegeEscalation: false
-      capabilities:
-        drop: ["ALL"]
-      privileged: false
-    volumeMounts:
-    - name: fuse-csi-ephemeral
-      mountPath: /data
-      readOnly: true
-      mountPropagation: HostToContainer
   volumes:
   - name: fuse-fd-passing
     emptyDir: {}
@@ -640,8 +597,8 @@ run_external_proxy_sshfs() {
     echo "Testing proxy/sshfs against external SFTP..."
     kubectl apply -f "${TMP_DIR}/external-proxy-sshfs.yaml"
     wait_for_pod_ready mfcp-external-proxy-sshfs
-    wait_for_fuse_mounted mfcp-external-proxy-sshfs busybox
-    assert_file_content mfcp-external-proxy-sshfs busybox "/data/${SSHFS_TEST_FILE}" "${SSHFS_EXPECTED_CONTENT}"
+    wait_for_fuse_mounted mfcp-external-proxy-sshfs starter
+    assert_file_content mfcp-external-proxy-sshfs starter "/data/${SSHFS_TEST_FILE}" "${SSHFS_EXPECTED_CONTENT}"
     kubectl delete -f "${TMP_DIR}/external-proxy-sshfs.yaml"
 }
 
@@ -649,8 +606,8 @@ run_external_starter_sshfs() {
     echo "Testing starter/sshfs against external SFTP..."
     kubectl apply -f "${TMP_DIR}/external-starter-sshfs.yaml"
     wait_for_pod_ready mfcp-external-starter-sshfs
-    wait_for_fuse_mounted mfcp-external-starter-sshfs busybox
-    assert_file_content mfcp-external-starter-sshfs busybox "/data/${SSHFS_TEST_FILE}" "${SSHFS_EXPECTED_CONTENT}"
+    wait_for_fuse_mounted mfcp-external-starter-sshfs starter
+    assert_file_content mfcp-external-starter-sshfs starter "/data/${SSHFS_TEST_FILE}" "${SSHFS_EXPECTED_CONTENT}"
     kubectl delete -f "${TMP_DIR}/external-starter-sshfs.yaml"
 }
 

@@ -208,8 +208,8 @@ spec:
     volumeMounts:
     - name: s3fs-passwd
       mountPath: /s3fs-passwd
+  containers:
   - name: starter
-    restartPolicy: Always
     image: ${IMAGE}
     imagePullPolicy: ${IMAGE_PULL_POLICY}
     command: ["/bin/bash", "-lc"]
@@ -251,20 +251,6 @@ spec:
         command: ["sh", "-c", "mount | grep /data | grep fuse"]
       failureThreshold: 300
       periodSeconds: 1
-  containers:
-  - name: busybox
-    image: busybox
-    command: ["sleep", "infinity"]
-    securityContext:
-      allowPrivilegeEscalation: false
-      capabilities:
-        drop: ["ALL"]
-      privileged: false
-    volumeMounts:
-    - name: fuse-csi-ephemeral
-      mountPath: /data
-      readOnly: true
-      mountPropagation: HostToContainer
   volumes:
   - name: fuse-fd-passing
     emptyDir: {}

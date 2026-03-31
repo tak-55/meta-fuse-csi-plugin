@@ -45,10 +45,9 @@ publish workflow では今回使う image のみを作成します。
 - Linux worker node があること
 - CSI node plugin DaemonSet を `privileged` で動かせること
 - sidecar / restartable init container が使えること
-- `hostUsers: false` をサポートする container runtime であること
 
-### 1. `hostUsers: false` の smoke test
-plugin を deploy する前に、cluster runtime が最小構成の `hostUsers: false` Pod を受け付けることを確認してください。
+### 1. Optional: `hostUsers: false` の smoke test
+`hostUsers: false` 互換性も見たい場合だけ、plugin を deploy する前に cluster runtime が最小構成の `hostUsers: false` Pod を受け付けることを確認してください。
 
 ```console
 $ kubectl apply -f - <<'EOF'
@@ -78,7 +77,7 @@ $ kubectl wait --for=condition=Ready pod/hostusers-smoke --timeout=60s
 $ kubectl delete pod/hostusers-smoke
 ```
 
-この Pod が起動前に失敗する場合は、先に cluster runtime 側の問題を解消してください。たとえば kind では `hostUsers: false` 有効時に `mount-product-files.sh: permission denied` で早期失敗することがあります。
+この Pod が起動前に失敗する場合でも、PSS restricted な通常 Pod 検証まで否定されるわけではありません。たとえば kind では `hostUsers: false` 有効時に `mount-product-files.sh: permission denied` で早期失敗することがあります。
 
 ### 2. CSI driver を deploy する
 既定の manifest は GHCR の `latest` を参照します。
@@ -114,7 +113,7 @@ $ kubectl apply -f /tmp/external-s3fs.yaml
 region が必要な S3 互換 endpoint を使う場合は、`s3.env` に `S3_REGION=...` を設定してください。
 
 ### 3. `proxy/s3fs` を検証する
-この example は Pod 内で MinIO を起動し、`starter` container 側の内容と `starter` container から見える `/data` の mount 結果が一致することを確認します。`hostUsers: false` の互換性のため、CSI volume は `starter` の 1 コンテナだけに mount します。
+この example は Pod 内で MinIO を起動し、`starter` container 側の内容と `starter` container から見える `/data` の mount 結果が一致することを確認します。PSS restricted な non-root Pod を維持したまま、CSI volume は `starter` の 1 コンテナだけに mount します。
 
 ```console
 $ kubectl apply -f ./examples/proxy/s3fs/deploy.yaml

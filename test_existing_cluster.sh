@@ -8,7 +8,7 @@ TMP_DIR=$(mktemp -d)
 REGISTRY="ghcr.io/tak-55/meta-fuse-csi-plugin"
 IMAGE_TAG="latest"
 CONFIG_DIR=""
-RUN_HOSTUSERS_SMOKE=true
+RUN_HOSTUSERS_SMOKE=false
 DEPLOY_DRIVER=true
 RUN_S3FS=true
 RUN_PROXY_SSHFS=true
@@ -29,7 +29,8 @@ Options:
   --registry REGISTRY           Container registry prefix
   --image-tag TAG               Image tag to test (default: latest)
   --config-dir DIR              Directory containing local S3 / SSHFS config files
-  --skip-hostusers-smoke        Skip the hostUsers:false smoke test
+  --run-hostusers-smoke         Run an optional hostUsers:false smoke test
+  --skip-hostusers-smoke        Deprecated no-op for backward compatibility
   --skip-driver-deploy          Skip applying the CSI driver manifests
   --skip-s3fs                   Skip s3fs validation
   --skip-proxy-sshfs            Skip proxy/sshfs validation
@@ -67,6 +68,10 @@ while [[ $# -gt 0 ]]; do
         --config-dir)
             CONFIG_DIR="$2"
             shift 2
+            ;;
+        --run-hostusers-smoke)
+            RUN_HOSTUSERS_SMOKE=true
+            shift
             ;;
         --skip-hostusers-smoke)
             RUN_HOSTUSERS_SMOKE=false
@@ -178,7 +183,7 @@ load_env_file() {
 }
 
 run_hostusers_smoke() {
-    echo "Running hostUsers:false smoke test..."
+    echo "Running optional hostUsers:false smoke test..."
     kubectl apply -f - <<'EOF'
 apiVersion: v1
 kind: Pod
@@ -314,7 +319,6 @@ metadata:
   name: mfcp-external-proxy-s3fs
 spec:
   terminationGracePeriodSeconds: 10
-  hostUsers: false
   securityContext:
     runAsNonRoot: true
     runAsUser: 1000
@@ -453,7 +457,6 @@ metadata:
   name: mfcp-external-proxy-sshfs
 spec:
   terminationGracePeriodSeconds: 10
-  hostUsers: false
   securityContext:
     runAsNonRoot: true
     runAsUser: 1000
@@ -538,7 +541,6 @@ metadata:
   name: mfcp-external-starter-sshfs
 spec:
   terminationGracePeriodSeconds: 10
-  hostUsers: false
   securityContext:
     runAsNonRoot: true
     runAsUser: 1000

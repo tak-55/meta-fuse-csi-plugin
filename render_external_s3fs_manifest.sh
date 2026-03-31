@@ -170,7 +170,6 @@ metadata:
   namespace: ${NAMESPACE}
 spec:
   terminationGracePeriodSeconds: 10
-  hostUsers: false
   securityContext:
     runAsNonRoot: true
     runAsUser: 1000

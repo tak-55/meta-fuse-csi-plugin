@@ -111,7 +111,7 @@ $ kubectl apply -f /tmp/external-s3fs.yaml
 
 `proxy/s3fs` の external test では、`s3.env` の `AWS_ACCESS_KEY_ID` / `AWS_SECRET_ACCESS_KEY` から一時的な `passwd_file` を生成し、その認証情報を `s3fs` に明示的に渡します。Restricted な non-root Pod からアクセスしやすくするため、`s3fs` には既定で `-o umask=000` を渡します。
 region が必要な S3 互換 endpoint を使う場合は、`s3.env` に `S3_REGION=...` を設定してください。
-運用向けの雛形としては `examples/existing-cluster/production-s3fs-deployment.yaml` と `examples/existing-cluster/production-sshfs-deployment.yaml` を使ってください。
+運用向けの雛形としては `examples/existing-cluster/production-s3fs-deployment.yaml` と `examples/existing-cluster/production-sshfs-deployment.yaml` を使ってください。どちらも `/data` は read-write です。
 
 ### 3. `proxy/s3fs` を検証する
 この example は Pod 内で MinIO を起動し、`starter` container 側の内容と `starter` container から見える `/data` の mount 結果が一致することを確認します。PSS restricted な non-root Pod を維持したまま、CSI volume は `starter` の 1 コンテナだけに mount します。
@@ -141,6 +141,7 @@ $ ./examples/check.sh ./starter/sshfs mfcp-example-starter-sshfs starter /home/a
 - CSI node plugin の状態確認: `kubectl logs -n mfcp-system ds/meta-fuse-csi-plugin -c meta-fuse-csi-plugin`
 - PSA が有効な cluster では `mfcp-system` namespace を privileged 扱いにする必要があります。`deploy/csi-driver.yaml` には `pod-security.kubernetes.io/enforce/audit/warn: privileged` を入れています。
 - `Error: container has runAsNonRoot and image will run as root` が出る場合は、最新版の `deploy/csi-driver-daemonset.yaml` を再適用してください。node 側 DaemonSet は root 前提のため、manifest で `runAsNonRoot: false` / `runAsUser: 0` を明示しています。
+- SSHFS で owner 表示を `1000:1000` に寄せたい場合は `SSHFS_ARGS="-o idmap=user -o uid=1000 -o gid=1000"` を試してください。ただし write 可否は remote の実権限で決まり、表示上の owner 変換だけでは変わりません。
 - example sidecar の log: `kubectl logs POD_NAME -c starter`
 - Pod 起動時の詳細: `kubectl describe pod POD_NAME`
 - cleanup: `kubectl delete -f ./examples/proxy/s3fs/deploy.yaml`, `kubectl delete -f ./examples/proxy/sshfs/deploy.yaml`, `kubectl delete -f ./examples/starter/sshfs/deploy.yaml`

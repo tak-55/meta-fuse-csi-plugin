@@ -28,4 +28,6 @@ $ kubectl apply -f /tmp/external-s3fs.yaml
 - `examples/existing-cluster/production-s3fs-deployment.yaml`
 - `examples/existing-cluster/production-sshfs-deployment.yaml`
 
-どちらも `Deployment + restartable init sidecar + app container` の構成で、user Pod は `restricted` / non-root のまま `/data` を app container から参照できます。必要に応じて `metadata.namespace` を追加してください。secret / endpoint / app image は実環境の値に置き換えてください。
+どちらも `Deployment + restartable init sidecar + app container` の構成で、user Pod は `restricted` / non-root のまま `/data` を app container から参照できます。production manifest の `/data` は read-write です。必要に応じて `metadata.namespace` を追加してください。secret / endpoint / app image は実環境の値に置き換えてください。
+
+SSHFS では `allow_other` / `umask=000` により non-root app container からアクセスしやすくしていますが、inode の owner 表示と実際の write 可否は別です。owner を `1000:1000` 風に見せたい場合は `SSHFS_ARGS="-o idmap=user -o uid=1000 -o gid=1000"` のように追加できます。ただし write 可否そのものは SFTP server 側の directory / file 権限で決まります。
